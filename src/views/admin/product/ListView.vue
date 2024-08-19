@@ -1,6 +1,6 @@
 <script setup>
 import { useAdminProductStore } from "../../../stores/admin/product";
-// import { useEventStore } from '@/stores/event'
+import { useEventStore } from '@/stores/event'
 
 import { RouterLink } from 'vue-router'
 
@@ -8,10 +8,11 @@ import AdminLayout from "../../../layouts/AdminLayout.vue";
 import TrashIcon from "../../../components/icons/Trash.vue"
 import EditIcon from '../../../components/icons/Edit.vue'
 import Table from "../../../components/Table.vue";
-import { onMounted } from "vue";
+import Pagination from "../../../components/Pagination.vue";
+import { onMounted, ref } from "vue";
 
 const adminProductStore = useAdminProductStore()
-// const eventStore = useEventStore()
+const eventStore = useEventStore()
 
 onMounted(async()=>{
   await adminProductStore.loadProducts()
@@ -25,8 +26,19 @@ const deleteProduct = async(productId) => {
     console.log('error', error)
   }
   
-  //eventStore.popupMessage('success', 'DELETE Successful!')
+  eventStore.popupMessage('success', 'DELETE Successful!')
 }
+
+const search = async () => {
+  await adminProductStore.loadProducts()
+}
+
+const changePage = async (page) => {
+  const mode = page > adminProductStore.page.activePage ? 'next' : 'previous'
+  adminProductStore.page.activePage = page
+  await adminProductStore.loadNextProduct(mode)
+}
+
 </script>
 <template>
   <AdminLayout>
@@ -46,6 +58,48 @@ const deleteProduct = async(productId) => {
           </div>
         </div>
         <div class="divider mt-2"></div>
+        <div class="flex justify-between">
+          <div class="flex-1">
+            <input v-model="adminProductStore.search.text" placeholder="Type here" class="input input-bordered w-full" />
+          </div>
+          <div class="flex-1 ml-2">
+            Updated at
+            <div class="join ml-2">
+              <button
+                class="btn join-item"
+                :class="adminProductStore.search.sort === 'asc' ? 'btn-active' : ''"
+                @click="adminProductStore.changeSortOrder('asc')">
+                ASC
+              </button>
+              <button
+                class="btn join-item"
+                :class="adminProductStore.search.sort === 'desc' ? 'btn-active' : ''"
+                @click="adminProductStore.changeSortOrder('desc')">
+                DESC
+              </button>
+            </div>
+          </div>
+          <div class="flex-1 ml-2">
+            Status
+            <div class="join ml-2">
+              <button
+                class="btn join-item"
+                :class="adminProductStore.search.status === 'open' ? 'btn-active' : ''"
+                @click="adminProductStore.changeFilterStatus('open')">
+                open
+              </button>
+              <button
+                class="btn join-item"
+                :class="adminProductStore.search.status === 'close' ? 'btn-active' : ''"
+                @click="adminProductStore.changeFilterStatus('close')">
+                close
+              </button>
+            </div>
+          </div>
+          <div class="flex-1">
+            <button class="btn" @click="search">Search</button>
+          </div>
+        </div>
         <div class="h-full w-full pb-6 bg-base-100">
           <div class="overflow-x-auto w-full">
             <Table :headers="['Name', 'Image', 'Price', 'Quantity', 'Status', 'Updated at','']">
@@ -78,6 +132,12 @@ const deleteProduct = async(productId) => {
                   </td>
                 </tr>
             </Table>
+            <Pagination 
+              :maxPage="adminProductStore.totalPage"
+              :activePage="adminProductStore.page.activePage"
+              :changePage="changePage"
+            >
+            </Pagination>
           </div>
         </div>
       </div>

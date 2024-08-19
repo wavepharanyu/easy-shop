@@ -8,28 +8,81 @@ import {
   getDoc,
   setDoc,
   deleteDoc,
-  query
+  query,
+  where,
+  orderBy,
+  limit,
+  limitToLast,
+  getCountFromServer,
+  startAfter,
+  endBefore
 } from 'firebase/firestore'
 
 import { db } from '@/firebase'
 
 export const useAdminProductStore = defineStore('admin-product', {
   state: () => ({
-    list: [],
-    loaded: false
+    docList: [],
+    search: {
+      text: '',
+      status: '',
+      sort: 'asc'
+    },
+    total: 1,
+    page: {
+      activePage: 1
+    },
   }),
+  getters: {
+    list(state) {
+      return state.docList.map(doc => {
+        let convertedData = doc.data()
+        convertedData.updatedAt = convertedData.updatedAt.toDate()
+        convertedData.productId = doc.id
+        return convertedData
+      })
+    },
+    totalPage (state) {
+      return Math.ceil(state.total / 2)
+    }
+  },
   actions: {
     async loadProducts () {
       try {
-        const productsCol = collection(db, 'products')
+        let productsCol = collection(db, 'products')
+
+        if (this.search.text) {
+          productsCol = query(
+            productsCol,
+            where('name', '==', this.search.text),
+          )
+        }
+
+        if (this.search.status) {
+          productsCol = query(
+            productsCol,
+            where('status', '==', this.search.status),
+          )
+        }
+
+        const countProductQuery = query(
+          productsCol,
+          orderBy('updatedAt', this.search.sort),
+        )
+
+        productsCol = query(
+          countProductQuery,
+          limit(2) 
+        )
+
         const productSnapshot = await getDocs(productsCol)
-        const products = productSnapshot.docs.map(doc => {
-          const convertedData = doc.data()
-          convertedData.updatedAt = convertedData.updatedAt.toDate()
-          convertedData.productId = doc.id
-          return convertedData
-        })
-        this.list = products
+        this.docList = productSnapshot.docs || []
+        this.page.activePage = 1
+
+        // calculate total
+        const allSnapshot = await getCountFromServer(countProductQuery)
+        this.total = allSnapshot.data().count
+        
       } catch (error) {
         console.log('error', error)
       }
@@ -78,6 +131,51 @@ export const useAdminProductStore = defineStore('admin-product', {
       } catch (error) {
         console.log('error', error)
       }
+    },
+    async changeSortOrder (newSort) {
+      try {
+        this.search.sort = newSort
+        await this.loadProducts()
+      } catch (error) {
+        console.log('error', error)
+      }
+    },
+    async changeFilterStatus (newStatus) {
+      try {
+        this.search.status = newStatus
+        await this.loadProducts()
+      } catch (error) {
+        console.log('error', error)
+      }
+    },
+    async loadNextProduct (mode) {
+      let productQuery = query(
+        collection(db, 'products'),
+        orderBy('updatedAt', this.search.sort),
+      )
+      if (this.search.status) {
+        productQuery = query(
+          productQuery,
+          where('status', '==', this.search.status),
+        )
+      }
+      if (mode === 'next') {
+        const lastDocument = this.docList[this.docList.length - 1]
+        productQuery = query(
+          productQuery,
+          startAfter(lastDocument),
+          limit(2)
+        )
+      } else {
+        const firstDocument = this.docList[0]
+        productQuery = query(
+          productQuery,
+          endBefore(firstDocument),
+          limitToLast(2)
+        )
+      }
+      const productSnapshot = await getDocs(productQuery)
+      this.docList = productSnapshot.docs
     }
-  }
+  },
 })

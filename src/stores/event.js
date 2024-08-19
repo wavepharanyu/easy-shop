@@ -13,9 +13,9 @@ export const useEventStore = defineStore('event', {
         message
       }
       this.alert = true
-      setTimeout(() => {
-        this.clearMessage()
-      },3000)
+      // setTimeout(() => {
+      //   this.clearMessage()
+      // },3000)
     },
     clearMessage() {
         this.alert = false

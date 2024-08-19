@@ -11,7 +11,7 @@ const eventStore = useEventStore()
 const route = useRoute()
 
 const userId = ref(-1)
-let userData = reactive({})
+let userData = ref({})
 
 const formData = [
     {
@@ -33,15 +33,15 @@ const formData = [
     },
 ]
 
-onMounted(() => {
+onMounted(async() => {
   if (route.params.id) {
-    userId.value = parseInt(route.params.id)
-    userData = adminUserStore.getUser(userId.value)
+    userId.value = route.params.id
+    userData.value = await adminUserStore.getUser(userId.value)
   }
 })
 
-const updateUser = () => {
-    adminUserStore.updateUser(userId.value, userData)
+const updateUser = async() => {
+    await adminUserStore.updateUser(userId.value, userData.value)
     eventStore.popupMessage('success', 'Update Product successful!')
 }
 

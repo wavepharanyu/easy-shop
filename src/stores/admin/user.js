@@ -1,38 +1,58 @@
 import { defineStore } from "pinia";
 
+import {
+  collection,
+  getDocs,
+  doc,
+  getDoc,
+  setDoc
+} from 'firebase/firestore'
+
+import { db } from "../../firebase";
+
 export const useAdminUserStore = defineStore("admin-user", {
   state: () => ({
-    list: [
-      {
-        name: "Mike",
-        role: "admin",
-        status: "active",
-        updatedAt: "9/15/2023, 11:50:24 PM",
-      },
-      {
-        name: "Test",
-        role: "moderator",
-        status: "inactive",
-        updatedAt: "9/15/2023, 11:50:24 PM",
-      },
-      {
-        name: "TP",
-        role: "member",
-        status: "active",
-        updatedAt: "9/15/2023, 11:50:24 PM",
-      },
-    ],
+    loaded: false,
+    list: [],
   }),
   actions: {
-    getUser(index) {
-      return this.list[index];
-    },
-    updateUser(index, userData) {
-      const fields = ["name", "role", "status"];
-      for (let field of fields) {
-        this.list[index][field] = userData[field];
+    async loadUser() {
+      const usersCol = collection(db, 'users')
+      const userSnapshot = await getDocs(usersCol)
+
+      const userList = userSnapshot.docs.map(doc => {
+        let convertedData = doc.data()
+        convertedData.updatedAt = convertedData.updatedAt.toDate()
+        convertedData.uid = doc.id
+        return convertedData
+      })
+      if (userList && userList.length > 0) {
+        this.list = userList
       }
-      this.list[index].updatedAt = new Date().toLocaleString();
+      this.loaded = true
+    },
+    async getUser(uid) {
+      try {
+        const docRef = doc(db, 'users', uid)
+        const docSnap = await getDoc(docRef)
+        return docSnap.data()
+      } catch (error) {
+        console.log('error', error)
+      }
+    },
+    async updateUser(uid, userData) {
+      try {
+        let updatedUser = {
+          name: userData.name,
+          status: userData.status,
+          role: userData.role,
+          updatedAt: new Date()
+        }
+        const docRef = doc(db, 'users', uid)
+        await setDoc(docRef, updatedUser)
+      } catch (error) {
+        console.log('error', error)
+      }
     },
     removeUser(index) {
       this.list.splice(index, 1);

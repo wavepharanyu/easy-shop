@@ -13,12 +13,18 @@ import { onMounted } from "vue";
 const adminProductStore = useAdminProductStore()
 // const eventStore = useEventStore()
 
-onMounted(()=>{
-    adminProductStore.loadProducts()
+onMounted(async()=>{
+  await adminProductStore.loadProducts()
 })
 
-const deleteProduct = (index) => {
-    adminProductStore.removeProduct(index)
+const deleteProduct = async(productId) => {
+  try {
+    await adminProductStore.removeProduct(productId)
+    await adminProductStore.loadProducts()
+  } catch (error) {
+    console.log('error', error)
+  }
+  
   //eventStore.popupMessage('success', 'DELETE Successful!')
 }
 </script>
@@ -61,12 +67,12 @@ const deleteProduct = (index) => {
                   </td>
                   <td>{{ product.updatedAt }}</td>
                   <td>
-                    <RouterLink :to="{ name: 'admin-products-update', params: { id: index } }">
+                    <RouterLink :to="{ name: 'admin-products-update', params: { id: product.productId } }">
                       <button class="w-8 btn btn-square btn-ghost mr-3">
                         <EditIcon></EditIcon>
                       </button>
                     </RouterLink>
-                    <button @click="deleteProduct(index)" class="w-8 btn btn-square btn-ghost">
+                    <button @click="deleteProduct(product.productId)" class="w-8 btn btn-square btn-ghost">
                       <TrashIcon></TrashIcon>
                     </button>
                   </td>

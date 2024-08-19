@@ -5,6 +5,8 @@
   import { useEventStore } from "./stores/event";
   import { onMounted } from "vue";
 
+  import Toast from "./components/Toast.vue";
+
   const cartStore = useCartStore()
   const productStore = useProductStore()
   const eventStore = useEventStore()
@@ -17,12 +19,15 @@
 </script>
 
 <template>
-  <div v-if="eventStore.alert" class="toast">
-    <div :class="`alert alert-${eventStore.data.status}`">
-      <span class="text-white">{{ eventStore.data.message }}</span>
-    </div>
+  <div>
+    <Toast
+      v-if="eventStore.alert"
+      :status="eventStore.data.status"
+      :message="eventStore.data.message"
+    >
+    </Toast>
+    <RouterView />
   </div>
-  <RouterView />
 </template>
 
 

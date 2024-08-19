@@ -7,7 +7,8 @@ import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
 } from "firebase/auth";
-import { auth } from "../firebase";
+import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { db, auth } from "../firebase";
 
 const provider = new GoogleAuthProvider();
 
@@ -16,17 +17,36 @@ export const useAccountStore = defineStore("account", {
     isLoggedIn: false,
     isAdmin: false,
     user: {},
+    profile: {}
   }),
   actions: {
     async checkAuth() {
       return new Promise((resolve) => {
-        onAuthStateChanged(auth, (user) => {
+        onAuthStateChanged(auth, async(user) => {
           if (user) {
             this.user = user;
             this.isLoggedIn = true;
-            if (this.user.email === 'admin@test.com') { 
-                this.isAdmin = true
+
+            const docRef = doc(db, 'users', user.uid)
+            const docSnap = await getDoc(docRef)
+
+            // ถ้าข้อมูลไม่มีอยู่ = เขียนข้อมูลเข้าไปใหม่
+            if (!docSnap.exists()) {
+                const newUser = {
+                    name: user.displayName,
+                    role: 'member',
+                    status: 'active',
+                    updatedAt: new Date()
+                }
+                await setDoc(docRef, newUser)
+                this.profile = newUser
             }
+            else {
+                this.profile = docSnap.data()
+            }
+            if (this.profile.role !== 'member') {
+                this.isAdmin = true
+              }
             resolve(true);
           } else {
             resolve(false);

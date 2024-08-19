@@ -13,7 +13,7 @@ const route = useRoute()
 const router = useRouter()
 
 const productId = ref(-1)
-let selectedProduct = reactive({
+let selectedProduct = ref({
   name: '',
   imageUrl: '',
   quantity: 0,
@@ -25,25 +25,30 @@ const mode = computed(() => {
   return productId.value !== -1 ? 'Edit' : 'Add'
 })
 
-onMounted(() => {
+onMounted(async() => {
   if (route.params.id) {
     productId.value = route.params.id
-    selectedProduct = productStore.getProduct(productId.value)
+    selectedProduct.value = await adminProductStore.getProduct(productId.value)
   }
 })
 
 
-const submitProduct = () => {
-  if (mode.value == 'Edit') {
+const submitProduct = async() => {
+  try {
+    if (mode.value == 'Edit') {
     // Edit mode
-    adminProductStore.updateProduct(productId.value, selectedProduct)
+    await adminProductStore.updateProduct(productId.value, selectedProduct.value)
     eventStore.popupMessage('success', 'Update Product successful!')
   } else {
     // Create mode
-    adminProductStore.addProduct(selectedProduct)
+    await adminProductStore.addProduct(selectedProduct.value)
     eventStore.popupMessage('success', 'Create Product successful!')
     router.push({ name: 'admin-products-list' })
   }
+  } catch (error) {
+    console.log('error', error)
+  }
+ 
 }
 </script>
 

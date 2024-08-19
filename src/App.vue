@@ -18,7 +18,7 @@
 
 <template>
   <div v-if="eventStore.alert" class="toast">
-    <div class="alert" :class="`alert-${eventStore.data.status}`">
+    <div :class="`alert alert-${eventStore.data.status}`">
       <span class="text-white">{{ eventStore.data.message }}</span>
     </div>
   </div>

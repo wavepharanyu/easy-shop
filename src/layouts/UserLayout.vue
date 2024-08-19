@@ -1,54 +1,58 @@
 <script setup>
-    import { ref, onMounted } from "vue"
-    import { RouterLink, useRouter } from "vue-router"
+import { ref, onMounted } from "vue"
+import { RouterLink, useRouter } from "vue-router"
 
-    import { useCartStore } from "../stores/user/cart";
+import { useCartStore } from "../stores/user/cart";
+import { useAccountStore } from "../stores/account";
 
-    import ProfileIcon from '../assets/icons/boy.png'
+import ProfileIcon from '../assets/icons/boy.png'
 
-    const isLoggedIn = ref(false)
-    const searchText = ref('')
-    const router = useRouter()
+const searchText = ref('')
+const router = useRouter()
 
-    const cartStore = useCartStore()
+const cartStore = useCartStore()
+const accountStore = useAccountStore()
 
-    onMounted(() => {
-        if(localStorage.getItem('isLoggedIn')){
-            isLoggedIn.value = true
-        }
-    })
+onMounted(async() => {
+  await accountStore.checkAuth()
+})
 
-    const login = () => {
-        isLoggedIn.value = true
-        localStorage.setItem('isLoggedIn', true)
+const login = async() => {
+    try {
+      await accountStore.signInWithGoogle()
+    } catch (error) {
+      console.log('error', error)
     }
+}
 
-    const logout = () => {
-        isLoggedIn.value = false
-        localStorage.removeItem('isLoggedIn')
-        localStorage.removeItem('cart-data')
-        localStorage.removeItem('order-data')
-        window.location.reload()
+const logout = async() => {
+    try {
+      await accountStore.signOut()
+      window.location.reload()
+    } catch (error) {
+      console.log('error', error)
     }
+}
 
-    const handleSearch = (event) => {
-      if(event.key === 'Enter'){
-        router.push({
-          name: 'search',
-          query: {
-            q: searchText.value
-          }
-        })
+const handleSearch = (event) => {
+  if(event.key === 'Enter'){
+    router.push({
+      name: 'search',
+      query: {
+        q: searchText.value
       }
-    }
-
+    })
+  }
+}
 </script>
 
 <template>
   <div class="container mx-auto">
     <div class="navbar bg-base-100">
       <div class="flex-1">
-        <RouterLink :to="{name: 'home'}" class="btn btn-ghost text-xl">Easy Shop</RouterLink>
+        <RouterLink :to="{name: 'home'}" class="btn btn-ghost text-xl"
+          >Easy Shop</RouterLink
+        >
       </div>
       <div class="flex-none gap-2">
         <div class="form-control">
@@ -77,7 +81,10 @@
                   d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
                 />
               </svg>
-              <span class="badge badge-sm indicator-item">{{ cartStore.summaryQuantity }}</span>
+              <span
+                class="badge badge-sm indicator-item"
+                >{{ cartStore.summaryQuantity }}</span
+              >
             </div>
           </div>
           <div
@@ -85,16 +92,30 @@
             class="card card-compact dropdown-content bg-base-100 z-[1] mt-3 w-52 shadow"
           >
             <div class="card-body">
-              <span class="text-lg font-bold">{{ cartStore.summaryQuantity }} Items</span>
-              <span class="text-info">Subtotal: {{ cartStore.summaryPrice }} ฿</span>
+              <span class="text-lg font-bold"
+                >{{ cartStore.summaryQuantity }} Items</span
+              >
+              <span class="text-info"
+                >Subtotal: {{ cartStore.summaryPrice }} ฿</span
+              >
               <div class="card-actions">
-                <RouterLink :to="{name: 'cart'}" class="btn btn-primary btn-block">View cart</RouterLink>
+                <RouterLink
+                  :to="{name: 'cart'}"
+                  class="btn btn-primary btn-block"
+                  >View cart</RouterLink
+                >
               </div>
             </div>
           </div>
         </div>
-        <button @click="login" v-if="!isLoggedIn" class="btn btn-ghost">Login</button>
-        <div class="dropdown dropdown-end" v-if="isLoggedIn">
+        <button
+          @click="login"
+          v-if="!accountStore.isLoggedIn"
+          class="btn btn-ghost"
+        >
+          Login
+        </button>
+        <div class="dropdown dropdown-end" v-if="accountStore.isLoggedIn">
           <div
             tabindex="0"
             role="button"
@@ -109,7 +130,9 @@
             class="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow"
           >
             <li>
-                <RouterLink :to="{name: 'profile'}" class="justify-between"> Profile </RouterLink>
+              <RouterLink :to="{name: 'profile'}" class="justify-between">
+                Profile
+              </RouterLink>
             </li>
             <li><a @click="logout">Logout</a></li>
           </ul>

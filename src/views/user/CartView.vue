@@ -26,7 +26,7 @@ const changeQuantity = (event, index) => {
           <div class="my-4">
             <img
               class="w-40 object-center object-cover"
-              src="https://fastly.picsum.photos/id/849/200/200.jpg?hmac=LwsdGn2endKvoLY10FPqtfqKYCVMbPEp5J6S_tUN1Yg"
+              :src="item.imageUrl"
             />
           </div>
           <div class="flex-1 ml-5 my-5">

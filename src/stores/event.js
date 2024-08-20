@@ -1,10 +1,18 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 
+import {
+  ref as databaseRef,
+  onValue
+} from 'firebase/database'
+
+import { realtimeDB } from "../firebase"
+
 export const useEventStore = defineStore('event', {
   state: () => ({
     alert: false,
-    data: {}
+    data: {},
+    banner: {}
   }),
   actions: {
     popupMessage(status, message) {
@@ -20,6 +28,12 @@ export const useEventStore = defineStore('event', {
     clearMessage() {
         this.alert = false
         this.data = {}
-    }
+    },
+    loadBanner () {
+      const bannerRef = databaseRef(realtimeDB, 'banner')
+      onValue(bannerRef, (snapshot) => {
+        this.banner = snapshot.val()
+      })
+    },
   }
 })

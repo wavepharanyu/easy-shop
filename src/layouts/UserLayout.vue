@@ -4,6 +4,7 @@ import { RouterLink, useRouter } from "vue-router"
 
 import { useCartStore } from "../stores/user/cart";
 import { useAccountStore } from "../stores/account";
+import { useEventStore } from "../stores/event";
 
 import ProfileIcon from '../assets/icons/boy.png'
 
@@ -12,9 +13,14 @@ const router = useRouter()
 
 const cartStore = useCartStore()
 const accountStore = useAccountStore()
+const eventStore = useEventStore()
 
 onMounted(async() => {
   await accountStore.checkAuth()
+})
+
+onMounted(async() => {
+  eventStore.loadBanner()
 })
 
 const login = async() => {
@@ -139,6 +145,12 @@ const handleSearch = (event) => {
           </ul>
         </div>
       </div>
+    </div>
+
+    <div v-if="eventStore.banner.display" class="w-full">
+      <a :href="eventStore.banner.link" target="_blank">
+        <img class="w-full" :src="eventStore.banner.imageUrl">
+      </a>
     </div>
 
     <slot></slot>

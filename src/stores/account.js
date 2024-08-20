@@ -7,7 +7,7 @@ import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
 } from "firebase/auth";
-import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore'
 import { db, auth } from "../firebase";
 
 const provider = new GoogleAuthProvider();
@@ -44,6 +44,9 @@ export const useAccountStore = defineStore("account", {
             else {
                 this.profile = docSnap.data()
             }
+
+            this.profile.email = user.email
+
             if (this.profile.role !== 'member') {
                 this.isAdmin = true
               }
@@ -85,5 +88,17 @@ export const useAccountStore = defineStore("account", {
       this.isAdmin = false;
       await signOut(auth);
     },
+    async updateProfile (userData) {
+      try {
+        const updateUserData = {
+          name: userData.name,
+          imageUrl: userData.imageUrl
+        }
+        const userRef = doc(db, 'users', this.user.uid)
+        await updateDoc(userRef, updateUserData)
+      } catch (error) {
+        console.log('error', error)
+      }
+    }
   },
 });

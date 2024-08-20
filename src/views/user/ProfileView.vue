@@ -3,38 +3,52 @@ import UserLayout from '../../layouts/UserLayout.vue'
 import ProfileIcon from '../../assets/icons/profile.png'
 import { ref, onMounted } from "vue";
 
+import { useAccountStore } from "../../stores/account";
+
+import { storage } from "../../firebase";
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
+
 const profileImageUrl = ref(ProfileIcon)
 const email = ref('')
 const name = ref('')
 
-const handleFileUpload = (event) => {
+const accountStore = useAccountStore()
+
+const handleFileUpload = async(event) => {
   const file = event.target.files[0]
 
-  if(file){
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      profileImageUrl.value = e.target.result
-    }
-    reader.readAsDataURL(file)
+  console.log(file)
+
+  if (file) {
+    const uploadRef = storageRef(
+      storage,
+      `users/${accountStore.user.uid}/${file.name}`
+    )
+    const snapshot = await uploadBytes(uploadRef, file)
+    const downloadURL = await getDownloadURL(snapshot.ref)
+    profileImageUrl.value = downloadURL
   }
 }
-const updateProfile = (event) => {
-  const profileData = {
-    imageUrl: profileImageUrl.value,
-    name: name.value,
-    email: email.value
+const updateProfile = async() => {
+  try {
+    const profileData = {
+      imageUrl: profileImageUrl.value,
+      name: name.value,
+      email: email.value
+      }
+    await accountStore.updateProfile(profileData)
+  } catch (error) {
+    console.log('error', error)
   }
-  localStorage.setItem('profile-data', JSON.stringify(profileData))
+  
 }
 
 onMounted(() => {
-  let profileData = localStorage.getItem('profile-data')
-  if(profileData){
-    profileData = JSON.parse(profileData)
-    profileImageUrl.value = profileData.imageUrl
-    name.value = profileData.name
-    email.value = profileData.email
-  }
+  let profileData = accountStore.profile
+  profileImageUrl.value = profileData.imageUrl || profileImageUrl.value
+  name.value = profileData.name
+  email.value = profileData.email
+
 })
 
 </script>
@@ -59,7 +73,8 @@ onMounted(() => {
               type="text"
               placeholder="Type here"
               class="input input-bordered w-full"
-              v-model="email"
+              :value="email"
+              disabled
             />
           </label>
         </div>

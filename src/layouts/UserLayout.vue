@@ -122,7 +122,7 @@ const handleSearch = (event) => {
             class="btn btn-ghost btn-circle avatar"
           >
             <div class="w-10 rounded-full">
-              <img alt="Tailwind CSS Navbar component" :src="ProfileIcon" />
+              <img alt="Tailwind CSS Navbar component" :src="accountStore.profile.imageUrl || ProfileIcon" />
             </div>
           </div>
           <ul

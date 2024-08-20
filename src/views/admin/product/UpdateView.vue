@@ -6,6 +6,9 @@ import { RouterLink, useRoute, useRouter } from 'vue-router'
 
 import AdminLayout from '@/layouts/AdminLayout.vue'
 
+import { ref as storageRef, uploadBytes, getDownloadURL  } from 'firebase/storage'
+import { storage } from '@/firebase'
+
 const adminProductStore = useAdminProductStore()
 const eventStore = useEventStore()
 
@@ -32,6 +35,26 @@ onMounted(async() => {
   }
 })
 
+const handleFileChange = async (event) => {
+  const file = event.target.files[0]
+
+  let mainPath = ''
+
+  if(productId.value !== -1){
+    mainPath = productId.value + '-'
+  }
+
+  if (file) {
+    const productRef = storageRef(
+      storage,
+      `products/${mainPath}${file.name}`
+    )
+    const snapshot = await uploadBytes(productRef, file)
+    const downloadURL = await getDownloadURL(snapshot.ref)
+    selectedProduct.value.imageUrl = downloadURL
+  }
+}
+
 
 const submitProduct = async() => {
   try {
@@ -48,7 +71,7 @@ const submitProduct = async() => {
   } catch (error) {
     console.log('error', error)
   }
- 
+
 }
 </script>
 
@@ -62,8 +85,9 @@ const submitProduct = async() => {
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="form-control w-full">
               <label class="label">
-                <span class="label-text text-base-content">Name</span></label>
-                <input
+                <span class="label-text text-base-content">Name</span></label
+              >
+              <input
                 type="text"
                 placeholder=""
                 class="input input-bordered w-full"
@@ -72,21 +96,18 @@ const submitProduct = async() => {
             </div>
             <div class="form-control w-full">
               <label class="label">
-                <span class="label-text text-base-content">
-                  Image
-                </span>
-              </label><input
-                type="text"
-                placeholder=""
-                class="input input-bordered w-full"
-                v-model="selectedProduct.imageUrl"
-              />
+                <span class="label-text text-base-content"> Image </span>
+              </label>
+              <div class="avatar">
+                  <div class="w-24 rounded-full">
+                    <img :src="selectedProduct.imageUrl" />
+                  </div>
+                </div>
+              <input type="file" placeholder="" @change="handleFileChange" />
             </div>
             <div class="form-control w-full">
               <label class="label">
-                <span class="label-text text-base-content">
-                  Price
-                </span>
+                <span class="label-text text-base-content"> Price </span>
               </label>
               <input
                 type="number"
@@ -97,9 +118,7 @@ const submitProduct = async() => {
             </div>
             <div class="form-control w-full">
               <label class="label">
-                <span class="label-text text-base-content">
-                  Quantity
-                </span>
+                <span class="label-text text-base-content"> Quantity </span>
               </label>
               <input
                 type="number"
@@ -110,14 +129,13 @@ const submitProduct = async() => {
             </div>
             <div class="form-control w-full">
               <label class="label">
-                <span class="label-text text-base-content">
-                  About
-                </span>
+                <span class="label-text text-base-content"> About </span>
               </label>
               <textarea
                 class="textarea textarea-bordered w-full"
                 v-model="selectedProduct.about"
-                placeholder="detail product">
+                placeholder="detail product"
+              >
               </textarea>
             </div>
           </div>
@@ -125,11 +143,12 @@ const submitProduct = async() => {
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="form-control w-full">
               <label class="label">
-                <span class="label-text text-base-content">
-                  Status
-                </span>
+                <span class="label-text text-base-content"> Status </span>
               </label>
-              <select class="select select-bordered w-full" v-model="selectedProduct.status">
+              <select
+                class="select select-bordered w-full"
+                v-model="selectedProduct.status"
+              >
                 <option disabled selected>Status</option>
                 <option value="open">Open</option>
                 <option value="close">Close</option>
@@ -137,7 +156,10 @@ const submitProduct = async() => {
             </div>
           </div>
           <div class="mt-4 flex justify-end">
-            <RouterLink :to="{ name: 'admin-products-list' }" class="btn btn-ghost">
+            <RouterLink
+              :to="{ name: 'admin-products-list' }"
+              class="btn btn-ghost"
+            >
               Back
             </RouterLink>
             <button @click="submitProduct()" class="btn btn-primary ml-4">

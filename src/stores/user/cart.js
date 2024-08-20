@@ -7,7 +7,19 @@ import {
     updateDoc,
     writeBatch
 } from 'firebase/firestore'
-import { db } from "../../firebase";
+
+import {
+    ref as databaseRef,
+    set,
+    onValue
+} from 'firebase/database'
+
+import {
+    db,
+    realtimeDB
+} from '@/firebase'
+
+import { useAccountStore } from "../account";
 
 export const useCartStore = defineStore("cart", {
   state: () => ({
@@ -22,16 +34,32 @@ export const useCartStore = defineStore("cart", {
     },
     summaryQuantity(state) {
         return state.items.reduce((acc, item) => acc + item.quantity, 0)
+    },
+    user(state) {
+        const accountStore = useAccountStore()
+        return accountStore.user
+    },
+    cartRef (state) {
+      return databaseRef(realtimeDB, `carts/${this.user.uid}`)
     }
   },
   actions: {
-    loadCart(){
-        const previousCart = localStorage.getItem('cart-data')
-        if(previousCart){
-            this.items = JSON.parse(previousCart)
-        }
+    async loadCart(){
+        if(this.user.uid){
+            onValue(this.cartRef, (snapshot) => {
+                const data = snapshot.val()
+                this.items = data || []
+            }, (err) => {
+                console.log('error', error)
+            })
+        }else{
+            const previousCart = localStorage.getItem('cart-data')
+            if(previousCart){
+                this.items = JSON.parse(previousCart)
+            }
+        }    
     },
-    addToCart(productData) {
+    async addToCart(productData) {
 
         const findProductIndex = this.items.findIndex(item => {
             return item.name === productData.name
@@ -44,15 +72,21 @@ export const useCartStore = defineStore("cart", {
             const currentItem = this.items[findProductIndex]
             this.updateQuantity(findProductIndex, currentItem.quantity + 1)
         }
-      
+        
+        // ทำการเพิ่มของเข้า cart ลง realtime database
+        await set(this.cartRef, this.items)
         localStorage.setItem('cart-data', JSON.stringify(this.items))
     },
-    updateQuantity(index, quantity) {
+    async updateQuantity(index, quantity) {
       this.items[index].quantity = quantity
+      // ทำการเพิ่มของเข้า cart ลง realtime database
+      await set(this.cartRef, this.items)
       localStorage.setItem('cart-data', JSON.stringify(this.items))
     },
-    removeItemInCart(index) {
+    async removeItemInCart(index) {
         this.items.splice(index, 1)
+        // ทำการเพิ่มของเข้า cart ลง realtime database
+        await set(this.cartRef, this.items)
         localStorage.setItem('cart-data', JSON.stringify(this.items))
     },
     async placeOrder(userData){

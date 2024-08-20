@@ -20,6 +20,7 @@ onMounted(async() => {
 const login = async() => {
     try {
       await accountStore.signInWithGoogle()
+      location.reload()
     } catch (error) {
       console.log('error', error)
     }

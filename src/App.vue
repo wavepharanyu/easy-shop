@@ -12,7 +12,6 @@
   const eventStore = useEventStore()
 
   onMounted(() => {
-    cartStore.loadCart()
     productStore.loadProducts()
   })
 

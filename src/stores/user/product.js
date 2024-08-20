@@ -11,7 +11,11 @@ export const useProductStore = defineStore('product', {
     async loadProducts () {
       const productCol = query( collection(db, "products"), where('status', '==', 'open') )
       const productSnapshot = await getDocs(productCol)
-      const productList = productSnapshot.docs.map(doc => doc.data())
+      const productList = productSnapshot.docs.map(doc => {
+        const covertedData = doc.data()
+        covertedData.productId = doc.id
+        return covertedData
+    })
       if (productList.length > 0) {
         this.list = productList
         this.loaded = true

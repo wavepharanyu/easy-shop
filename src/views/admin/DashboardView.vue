@@ -1,5 +1,15 @@
 <script setup>
+import { onMounted } from 'vue'
+
 import AdminLayout from '@/layouts/AdminLayout.vue'
+
+import { useAdminDashboardStore } from "../../stores/admin/dashboard";
+
+const adminDashboardStore = useAdminDashboardStore()
+
+onMounted(async () => {
+  await adminDashboardStore.loadDashboard()
+})
 
 const barOption = {
   options: {
@@ -41,7 +51,7 @@ const donutOption = {
             </svg>
           </div>
           <div class="stat-title">Orders</div>
-          <div class="stat-value">31K</div>
+          <div class="stat-value">{{ adminDashboardStore.stats.order }}</div>
         </div>
         <div class="stat">
           <div class="stat-figure text-secondary">
@@ -57,7 +67,7 @@ const donutOption = {
             </svg>
           </div>
           <div class="stat-title">Products</div>
-          <div class="stat-value">324</div>
+          <div class="stat-value">{{ adminDashboardStore.stats.product }}</div>
         </div>
         <div class="stat">
           <div class="stat-figure text-secondary">
@@ -72,7 +82,7 @@ const donutOption = {
             </svg>
           </div>
           <div class="stat-title">Users</div>
-          <div class="stat-value">4,200</div>
+          <div class="stat-value">{{ adminDashboardStore.stats.users }}</div>
         </div>
       </div>
     </div>

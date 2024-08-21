@@ -1,10 +1,11 @@
 const { onRequest } = require("firebase-functions/v2/https");
 const { initializeApp } = require("firebase-admin/app");
 const express = require("express");
-
+const { onDocumentWritten } = require("firebase-functions/v2/firestore")
+ 
 const app = express();
 
-const { db, auth } = require("./firebaseConfig");
+const { db, auth, realtimeDB } = require("./firebaseConfig");
 
 const omise = require('omise')({
   secretKey: process.env.OMISE_SECRET_KEY,
@@ -146,3 +147,21 @@ app.post('/webhook', async (req, res) => {
 })
 
 exports.api = onRequest(app);
+
+// เมื่อ order ถูกสร้าง = update ข้อมูลใน collection stat ของ realtime DB
+exports.orderCreated = onDocumentWritten('orders/{orderId}', async (event) => {
+  try {
+    const oldData = event.data.before.data()
+    const newData = event.data.after.data()
+    const orderStateRef = realtimeDB.ref('stats/order')
+
+    // Delete order case and success case
+    if (newData && newData.status === 'successful' && (newData.status !== oldData.status)){
+      await orderStateRef.transaction((currentValue) => {
+        return currentValue + newData.totalPrice
+      })
+    }
+  } catch (error) {
+    console.log('error', error)
+  }
+})

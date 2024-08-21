@@ -13,10 +13,10 @@ let orderData = ref({
   products: []
 })
 
-onMounted(() => {
+onMounted(async() => {
   if (route.params.id) {
-    orderId.value = parseInt(route.params.id)
-    orderData.value = adminOrderStore.getOrder(orderId.value)
+    orderId.value = route.params.id
+    orderData.value = await adminOrderStore.getOrder(orderId.value)
   }
 })
 </script>
@@ -32,11 +32,11 @@ onMounted(() => {
         <div class="grid grid-cols-2 gap-2 mb-2">
           <div>
             <div class="font-bold">Order date</div>
-            <div>{{ orderData.updatedAt }}</div>
+            <div>{{ orderData.createdAt }}</div>
           </div>
           <div>
             <div class="font-bold">Order Number</div>
-            <div>{{ orderData.no }}</div>
+            <div>{{ orderData.orderId }}</div>
           </div>
           <div>
             <div class="font-bold">Payment method</div>

@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "apexcharts": "^3.51.0",
+    "axios": "^1.7.4",
     "firebase": "^10.13.0",
     "pinia": "^2.1.7",
     "vue": "^3.4.29",

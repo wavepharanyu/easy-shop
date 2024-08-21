@@ -1,11 +1,10 @@
 import { ref, computed } from "vue";
 import { defineStore } from "pinia";
+import axios from "axios";
 
 import {
     doc,
-    increment,
-    updateDoc,
-    writeBatch
+    getDoc
 } from 'firebase/firestore'
 
 import {
@@ -91,36 +90,35 @@ export const useCartStore = defineStore("cart", {
     },
     async placeOrder(userData){
         try {
-            const orderData = {
+            const checkoutData = {
                 ...userData,
-                totalPrice: this.summaryPrice,
-                paymentMethod: 'Credit Card',
-                createdAt: (new Date()).toLocaleString(),
-                orderNumber: `AA${(Math.floor(Math.random() * 900000) + 100000).toString()}`,
-                products: this.items
+                products: this.items.map(product => ({
+                    productId: product.productId,
+                    quantity: product.quantity
+                }))
             }
+            const response = await axios.post('/api/placeorder',{
+                source: 'test_src',
+                checkout: checkoutData
+            })
 
-            const batch = writeBatch(db)
-            // workaround (update stock = checkout complete), not write order
-            for (const product of orderData.products) {
-                const productRef = doc(db, 'products', product.productId)
-                // update จำนวน remainQuantity ลงทีละ 1
-                batch.update(productRef, {
-                    remainQuantity: increment(-1)
-                })
-            }
-            await batch.commit()
-
-            localStorage.setItem('order-data', JSON.stringify(orderData))
+            return response.data
         }catch (error) {
             console.log('error', error.code)
             throw new Error('out of stock')
         }
     },
-    loadCheckout(){
-        const orderData = localStorage.getItem('order-data')
-        if(orderData){
-            this.checkout = JSON.parse(orderData)
+    async loadCheckout (orderId) {
+        try {
+          const orderRef = doc(db, 'orders', orderId)
+          const docSnap = await getDoc(orderRef)
+          let checkoutData = docSnap.data()
+          checkoutData.orderNumber = orderId
+          checkoutData.createdAt = checkoutData.createdAt.toDate()
+          // ส่งต่อข้อมูลไป checkout
+          this.checkout = checkoutData
+        } catch (error) {
+          throw new Error(error.message)
         }
     }
   },

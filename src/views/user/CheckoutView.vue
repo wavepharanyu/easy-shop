@@ -31,9 +31,9 @@ const userFormData = reactive({
 
 })
 
-const payment = () => {
-  cartStore.placeOrder(userFormData)
-  router.push({ name: 'success' })
+const payment = async() => {
+  const responseData = await cartStore.placeOrder(userFormData)
+  location.href = responseData.redirectUrl
 }
 </script>
 

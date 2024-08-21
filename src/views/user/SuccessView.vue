@@ -1,16 +1,29 @@
 <script setup>
   import UserLayout from '../../layouts/UserLayout.vue'
   import { useCartStore } from "../../stores/user/cart";
+  import { useRoute } from "vue-router";
   import { ref, onMounted } from "vue";
 
   const cartStore = useCartStore()
   const orderData = ref({})
+  const orderId = ref('')
 
-  onMounted(() => {
-    cartStore.loadCheckout()
-    if(cartStore.checkout.orderNumber){
-      orderData.value = cartStore.checkout
+  const route = useRoute()
+
+  onMounted(async() => {
+    try {
+    if (!route.query.order_id) {
+      throw new Error('order not found')
     }
+    orderId.value = route.query.order_id
+    await cartStore.loadCheckout(orderId.value)
+    orderData.value = cartStore.checkout
+
+    //cartStore.clearCart()
+  } catch (error) {
+    console.log('error', error)
+    //location.href = '/'
+  }
   })
 
 </script>
@@ -26,11 +39,11 @@
     <div class="grid grid-cols-4 gap-2">
       <div>
         <div class="font-bold">Order date</div>
-        <div>{{ orderData.creaotedDate }}</div>
+        <div>{{ orderData.createdAt }}</div>
       </div>
       <div>
         <div class="font-bold">Order number</div>
-        <div>{{ orderData.orderNumber }}</div>
+        <div class="break-words">{{ orderData.orderNumber }}</div>
       </div>
       <div>
         <div class="font-bold">Payment method</div>

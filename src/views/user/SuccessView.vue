@@ -12,18 +12,19 @@
 
   onMounted(async() => {
     try {
-    if (!route.query.order_id) {
-      throw new Error('order not found')
-    }
-    orderId.value = route.query.order_id
-    await cartStore.loadCheckout(orderId.value)
-    orderData.value = cartStore.checkout
+      if (!route.query.order_id) {
+        throw new Error('order not found')
+      }
+      orderId.value = route.query.order_id
+      await cartStore.loadCheckout(orderId.value)
+      orderData.value = cartStore.checkout
 
-    //cartStore.clearCart()
-  } catch (error) {
-    console.log('error', error)
-    //location.href = '/'
-  }
+      cartStore.clearCart()
+    } catch (error) {
+      console.log('error', error)
+      alert('Order unsuccessful !')
+      location.href = '/'
+    }
   })
 
 </script>

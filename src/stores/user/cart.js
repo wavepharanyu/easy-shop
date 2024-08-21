@@ -10,7 +10,8 @@ import {
 import {
     ref as databaseRef,
     set,
-    onValue
+    onValue,
+    remove
 } from 'firebase/database'
 
 import {
@@ -19,6 +20,23 @@ import {
 } from '@/firebase'
 
 import { useAccountStore } from "../account";
+
+Omise.setPublicKey(import.meta.env.VITE_OMISE_PUBLIC_KEY)
+
+const createSource = (amount) => {
+    return new Promise((resolve, reject) => {
+        // ทำการส่ง source ที่ต้องการจ่ายไป omise เพื่อนำ source token กลับมา
+        Omise.createSource('rabbit_linepay', {
+        amount: (amount * 100),
+        currency: 'THB'
+        }, (statusCode, response) => {
+        if (statusCode !== 200) {
+            return reject(response)
+        }
+        resolve(response)
+        })
+    })
+}
 
 export const useCartStore = defineStore("cart", {
   state: () => ({
@@ -49,7 +67,7 @@ export const useCartStore = defineStore("cart", {
                 const data = snapshot.val()
                 this.items = data || []
             }, (err) => {
-                console.log('error', error)
+                console.log('error', err)
             })
         }else{
             const previousCart = localStorage.getItem('cart-data')
@@ -58,6 +76,16 @@ export const useCartStore = defineStore("cart", {
             }
         }    
     },
+    async clearCart(){
+        if(this.user.uid){
+            remove(this.cartRef).then(()=> {
+                console.log('clear cart')
+            }).catch((err) =>{
+                console.log('error', err)
+            })
+        }
+    },
+
     async addToCart(productData) {
 
         const findProductIndex = this.items.findIndex(item => {
@@ -97,8 +125,11 @@ export const useCartStore = defineStore("cart", {
                     quantity: product.quantity
                 }))
             }
+
+            const omiseResponse = await createSource(this.summaryPrice)
+
             const response = await axios.post('/api/placeorder',{
-                source: 'test_src',
+                source: omiseResponse.id,
                 checkout: checkoutData
             })
 
@@ -108,6 +139,7 @@ export const useCartStore = defineStore("cart", {
             throw new Error('out of stock')
         }
     },
+
     async loadCheckout (orderId) {
         try {
           const orderRef = doc(db, 'orders', orderId)
